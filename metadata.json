@@ -1,0 +1,5 @@
+{
+  "name": "Sistem Informasi Kepegawaian",
+  "description": "A web-based Human Resource Information System (HRIS) to manage employee data, attendance, leave, performance, and overtime reports.",
+  "requestFramePermissions": []
+}

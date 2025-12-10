@@ -17,13 +17,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, userRole }
     { name: 'Manajemen Cuti', icon: <CalendarIcon /> },
     { name: 'Penilaian Kinerja', icon: <StarIcon /> },
     { name: 'Data Lembur', icon: <CurrencyDollarIcon /> },
+    { name: 'Laporan Cuti', icon: <DocumentTextIcon /> },
+    { name: 'Laporan Lembur', icon: <CurrencyDollarIcon /> },
+    { name: 'Laporan Kinerja', icon: <StarIcon /> },
     { name: 'Laporan Kustom', icon: <DocumentTextIcon /> },
   ];
 
   const employeeNavItems: { name: EmployeePage; icon: React.ReactNode }[] = [
-    { name: 'Dasbor Pegawai', icon: <FingerPrintIcon className="h-6 w-6"/> },
+    { name: 'Dasbor Pegawai', icon: <FingerPrintIcon className="h-6 w-6" /> },
   ];
-  
+
   const navItems = userRole === 'admin' ? adminNavItems : employeeNavItems;
 
   return (
@@ -41,11 +44,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage, userRole }
               e.preventDefault();
               setActivePage(item.name);
             }}
-            className={`flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${
-              activePage === item.name
+            className={`flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${activePage === item.name
                 ? 'bg-primary text-white shadow-md'
                 : 'text-subtle hover:bg-gray-100 hover:text-on-surface'
-            }`}
+              }`}
           >
             {item.icon}
             <span className="ml-3">{item.name}</span>

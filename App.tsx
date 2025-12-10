@@ -8,7 +8,11 @@ import LaporanKehadiran from './pages/LaporanKehadiran';
 import ManajemenCuti from './pages/ManajemenCuti';
 import PenilaianKinerja from './pages/PenilaianKinerja';
 import DataLembur from './pages/DataLembur';
+
 import LaporanKustom from './pages/LaporanKustom';
+import LaporanCuti from './pages/LaporanCuti';
+import LaporanLembur from './pages/LaporanLembur';
+import LaporanKinerja from './pages/LaporanKinerja';
 import LoginPage from './pages/LoginPage';
 import DasborPegawai from './pages/DasborPegawai';
 import { Employee, LeaveRequest, OvertimeRequest, LeaveStatus, OvertimeStatus, Attendance, PerformanceReview } from './types';
@@ -19,7 +23,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
 
 // Page types for Admin
-export type AdminPage = 'Dashboard' | 'Data Pegawai' | 'Laporan Kehadiran' | 'Manajemen Cuti' | 'Penilaian Kinerja' | 'Data Lembur' | 'Laporan Kustom';
+export type AdminPage = 'Dashboard' | 'Data Pegawai' | 'Laporan Kehadiran' | 'Manajemen Cuti' | 'Penilaian Kinerja' | 'Data Lembur' | 'Laporan Kustom' | 'Laporan Cuti' | 'Laporan Lembur' | 'Laporan Kinerja';
 
 // Page types for Employee
 export type EmployeePage = 'Dasbor Pegawai';
@@ -41,7 +45,7 @@ const App: React.FC = () => {
   const [masterOvertimeRequests, setMasterOvertimeRequests] = useState<OvertimeRequest[]>(initialOvertimeRequests);
   const [masterAttendance, setMasterAttendance] = useState<Attendance[]>(initialAttendanceRecords);
   const [masterPerformanceReviews, setMasterPerformanceReviews] = useState<PerformanceReview[]>(initialPerformanceReviews);
-  
+
   // Global state for calculated leave balances
   const [leaveBalances, setLeaveBalances] = useState<Record<string, number>>({});
 
@@ -51,37 +55,37 @@ const App: React.FC = () => {
     const newBalances: Record<string, number> = {};
 
     employees.forEach(emp => {
-        // 1. Calculate Entitlement (Jatah Cuti)
-        // Default 12 days. If joined this year, prorata: 12 - joinMonth.
-        const joinDate = new Date(emp.joinDate);
-        let entitlement = 12;
+      // 1. Calculate Entitlement (Jatah Cuti)
+      // Default 12 days. If joined this year, prorata: 12 - joinMonth.
+      const joinDate = new Date(emp.joinDate);
+      let entitlement = 12;
 
-        if (joinDate.getFullYear() === currentYear) {
-            const joinMonth = joinDate.getMonth(); // 0 = Jan, 11 = Dec
-            entitlement = Math.max(0, 12 - joinMonth);
-        }
+      if (joinDate.getFullYear() === currentYear) {
+        const joinMonth = joinDate.getMonth(); // 0 = Jan, 11 = Dec
+        entitlement = Math.max(0, 12 - joinMonth);
+      }
 
-        // 2. Calculate Used Leave (Cuti Terpakai)
-        // Count 'Disetujui' AND 'Menunggu'.
-        // EXCLUDE 'Ditolak' so balance returns if rejected.
-        const usedDays = masterLeaveRequests
-            .filter(req => 
-                req.employeeId === emp.id && 
-                req.status !== LeaveStatus.Ditolak && 
-                req.leaveType === 'Cuti Tahunan' &&
-                new Date(req.startDate).getFullYear() === currentYear
-            )
-            .reduce((total, req) => {
-                const start = new Date(req.startDate);
-                const end = new Date(req.endDate);
-                // Calculate difference in days (inclusive)
-                const diffTime = Math.abs(end.getTime() - start.getTime());
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
-                return total + diffDays;
-            }, 0);
+      // 2. Calculate Used Leave (Cuti Terpakai)
+      // Count 'Disetujui' AND 'Menunggu'.
+      // EXCLUDE 'Ditolak' so balance returns if rejected.
+      const usedDays = masterLeaveRequests
+        .filter(req =>
+          req.employeeId === emp.id &&
+          req.status !== LeaveStatus.Ditolak &&
+          req.leaveType === 'Cuti Tahunan' &&
+          new Date(req.startDate).getFullYear() === currentYear
+        )
+        .reduce((total, req) => {
+          const start = new Date(req.startDate);
+          const end = new Date(req.endDate);
+          // Calculate difference in days (inclusive)
+          const diffTime = Math.abs(end.getTime() - start.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          return total + diffDays;
+        }, 0);
 
-        // 3. Set Balance
-        newBalances[emp.id] = Math.max(0, entitlement - usedDays);
+      // 3. Set Balance
+      newBalances[emp.id] = Math.max(0, entitlement - usedDays);
     });
 
     setLeaveBalances(newBalances);
@@ -108,7 +112,7 @@ const App: React.FC = () => {
   };
 
   const handleUpdateLeaveStatus = (id: string, status: LeaveStatus) => {
-    setMasterLeaveRequests(prev => 
+    setMasterLeaveRequests(prev =>
       prev.map(req => req.id === id ? { ...req, status } : req)
     );
   };
@@ -118,23 +122,23 @@ const App: React.FC = () => {
   };
 
   const handleUpdateOvertimeStatus = (id: string, status: OvertimeStatus) => {
-    setMasterOvertimeRequests(prev => 
+    setMasterOvertimeRequests(prev =>
       prev.map(req => req.id === id ? { ...req, status } : req)
     );
   };
 
   const handleAttendanceUpdate = (record: Attendance) => {
     setMasterAttendance(prev => {
-        const index = prev.findIndex(r => r.id === record.id);
-        if (index !== -1) {
-            // Update existing record (e.g. Clock Out)
-            const newRecords = [...prev];
-            newRecords[index] = record;
-            return newRecords;
-        } else {
-            // Add new record (Clock In)
-            return [record, ...prev];
-        }
+      const index = prev.findIndex(r => r.id === record.id);
+      if (index !== -1) {
+        // Update existing record (e.g. Clock Out)
+        const newRecords = [...prev];
+        newRecords[index] = record;
+        return newRecords;
+      } else {
+        // Add new record (Clock In)
+        return [record, ...prev];
+      }
     });
   };
 
@@ -152,75 +156,82 @@ const App: React.FC = () => {
         return <LaporanKehadiran attendanceRecords={masterAttendance} />;
       case 'Manajemen Cuti':
         return (
-          <ManajemenCuti 
-            requests={masterLeaveRequests} 
+          <ManajemenCuti
+            requests={masterLeaveRequests}
             onUpdateStatus={handleUpdateLeaveStatus}
             onAddLeave={handleAddLeaveRequest} // Passed to allow admin to add leave
           />
         );
       case 'Penilaian Kinerja':
         return (
-            <PenilaianKinerja 
-                reviews={masterPerformanceReviews}
-                onAddReview={handleAddPerformanceReview}
-            />
+          <PenilaianKinerja
+            reviews={masterPerformanceReviews}
+            onAddReview={handleAddPerformanceReview}
+          />
         );
       case 'Data Lembur':
         return (
-          <DataLembur 
-            requests={masterOvertimeRequests} 
-            onUpdateStatus={handleUpdateOvertimeStatus} 
+          <DataLembur
+            requests={masterOvertimeRequests}
+            onUpdateStatus={handleUpdateOvertimeStatus}
+            onAddRequest={handleAddOvertimeRequest}
           />
         );
       case 'Laporan Kustom':
         return <LaporanKustom />;
+      case 'Laporan Cuti':
+        return <LaporanCuti leaveRequests={masterLeaveRequests} employees={employees} />;
+      case 'Laporan Lembur':
+        return <LaporanLembur overtimeRequests={masterOvertimeRequests} employees={employees} />;
+      case 'Laporan Kinerja':
+        return <LaporanKinerja reviews={masterPerformanceReviews} employees={employees} />;
       default:
         return <Dashboard setActivePage={setActivePage} attendanceRecords={masterAttendance} leaveRequests={masterLeaveRequests} />;
     }
   };
-  
+
   const renderEmployeeContent = () => {
     if (currentUser?.role === 'employee') {
-       switch (activePage as EmployeePage) {
+      switch (activePage as EmployeePage) {
         case 'Dasbor Pegawai':
-            return (
-              <DasborPegawai 
-                employee={currentUser.employee} 
-                leaves={masterLeaveRequests}
-                overtimes={masterOvertimeRequests}
-                attendanceRecords={masterAttendance}
-                reviews={masterPerformanceReviews}
-                onAddLeave={handleAddLeaveRequest}
-                onAddOvertime={handleAddOvertimeRequest}
-                onAttendanceUpdate={handleAttendanceUpdate}
-                remainingLeave={leaveBalances[currentUser.employee.id] || 0}
-              />
-            );
+          return (
+            <DasborPegawai
+              employee={currentUser.employee}
+              leaves={masterLeaveRequests}
+              overtimes={masterOvertimeRequests}
+              attendanceRecords={masterAttendance}
+              reviews={masterPerformanceReviews}
+              onAddLeave={handleAddLeaveRequest}
+              onAddOvertime={handleAddOvertimeRequest}
+              onAttendanceUpdate={handleAttendanceUpdate}
+              remainingLeave={leaveBalances[currentUser.employee.id] || 0}
+            />
+          );
         default:
-            return (
-              <DasborPegawai 
-                employee={currentUser.employee}
-                leaves={masterLeaveRequests}
-                overtimes={masterOvertimeRequests}
-                attendanceRecords={masterAttendance}
-                reviews={masterPerformanceReviews}
-                onAddLeave={handleAddLeaveRequest}
-                onAddOvertime={handleAddOvertimeRequest}
-                onAttendanceUpdate={handleAttendanceUpdate}
-                remainingLeave={leaveBalances[currentUser.employee.id] || 0}
-              />
-            );
-       }
+          return (
+            <DasborPegawai
+              employee={currentUser.employee}
+              leaves={masterLeaveRequests}
+              overtimes={masterOvertimeRequests}
+              attendanceRecords={masterAttendance}
+              reviews={masterPerformanceReviews}
+              onAddLeave={handleAddLeaveRequest}
+              onAddOvertime={handleAddOvertimeRequest}
+              onAttendanceUpdate={handleAttendanceUpdate}
+              remainingLeave={leaveBalances[currentUser.employee.id] || 0}
+            />
+          );
+      }
     }
     return null;
   }
 
   if (!currentUser) {
     return (
-        <ToastProvider>
-            <LoginPage onLoginSuccess={handleLoginSuccess} />
-            <ToastContainer />
-        </ToastProvider>
+      <ToastProvider>
+        <LoginPage onLoginSuccess={handleLoginSuccess} />
+        <ToastContainer />
+      </ToastProvider>
     );
   }
 
@@ -228,33 +239,33 @@ const App: React.FC = () => {
     <NotificationProvider currentUser={currentUser}>
       <ToastProvider>
         <div className="flex h-screen bg-background">
-            <Sidebar 
-            activePage={activePage} 
-            setActivePage={setActivePage} 
+          <Sidebar
+            activePage={activePage}
+            setActivePage={setActivePage}
             userRole={currentUser.role}
-            />
-            <div className="flex-1 flex flex-col overflow-hidden">
-            <Header 
-                currentPage={activePage} 
-                onLogoutClick={() => setIsLogoutModalOpen(true)}
-                user={currentUser}
-                setActivePage={setActivePage}
+          />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Header
+              currentPage={activePage}
+              onLogoutClick={() => setIsLogoutModalOpen(true)}
+              user={currentUser}
+              setActivePage={setActivePage}
             />
             <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 sm:p-6 lg:p-8">
-                {currentUser.role === 'admin' ? renderAdminContent() : renderEmployeeContent()}
+              {currentUser.role === 'admin' ? renderAdminContent() : renderEmployeeContent()}
             </main>
-            </div>
+          </div>
         </div>
         <Modal
-            isOpen={isLogoutModalOpen}
-            onClose={() => setIsLogoutModalOpen(false)}
-            onConfirm={handleLogout}
-            title="Konfirmasi Logout"
-            confirmText="Ya, Logout"
-            cancelText="Batal"
-            confirmColor="red"
+          isOpen={isLogoutModalOpen}
+          onClose={() => setIsLogoutModalOpen(false)}
+          onConfirm={handleLogout}
+          title="Konfirmasi Logout"
+          confirmText="Ya, Logout"
+          cancelText="Batal"
+          confirmColor="red"
         >
-            <p>Apakah Anda yakin ingin keluar dari sesi ini?</p>
+          <p>Apakah Anda yakin ingin keluar dari sesi ini?</p>
         </Modal>
         <ToastContainer />
       </ToastProvider>
